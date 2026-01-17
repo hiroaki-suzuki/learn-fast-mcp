@@ -55,13 +55,20 @@ async def demo_tools(mcp_client: Client, gemini_client: genai.Client):
         config=config,
     )
 
-    part = response.candidates[0].content.parts[0]
+    candidates = response.candidates
+    if not candidates or not candidates[0].content or not candidates[0].content.parts:
+        print(f"\nLLMの応答: {response.text}")
+        return
+
+    part = candidates[0].content.parts[0]
     if part.function_call:
         func_call = part.function_call
-        print(f"\nLLMが選択: {func_call.name}({dict(func_call.args)})")
+        func_name = func_call.name or ""
+        func_args = dict(func_call.args.items()) if func_call.args else {}
+        print(f"\nLLMが選択: {func_name}({func_args})")
 
         # MCPツールを実行
-        result = await mcp_client.call_tool(func_call.name, dict(func_call.args))
+        result = await mcp_client.call_tool(func_name, func_args)
         print(f"実行結果: {result}")
     else:
         print(f"\nLLMの応答: {response.text}")
@@ -124,14 +131,17 @@ async def demo_prompts(mcp_client: Client, gemini_client: genai.Client):
     # プロンプトを取得（引数を渡す）
     print("\n--- explain_topic プロンプトを使用 ---")
     prompt_result = await mcp_client.get_prompt("explain_topic", {"topic": "MCP"})
-    print(f"生成されたプロンプト: {prompt_result.messages[0].content.text}")
+    content = prompt_result.messages[0].content
+    prompt_text = content.text if hasattr(content, "text") else str(content)
+    print(f"生成されたプロンプト: {prompt_text}")
 
     # 取得したプロンプトをLLMに送信
     response = gemini_client.models.generate_content(
         model="gemini-2.5-flash-lite",
-        contents=prompt_result.messages[0].content.text,
+        contents=prompt_text,
     )
-    print(f"\nLLMの回答:\n{response.text[:300]}...")  # 先頭300文字
+    response_text = response.text or ""
+    print(f"\nLLMの回答:\n{response_text[:300]}...")  # 先頭300文字
 
     # コードレビュープロンプト
     print("\n--- code_review プロンプトを使用 ---")
@@ -140,13 +150,16 @@ async def demo_prompts(mcp_client: Client, gemini_client: genai.Client):
         "code_review",
         {"language": "Python", "code": code, "focus": "可読性"},
     )
-    print(f"生成されたプロンプト:\n{prompt_result.messages[0].content.text}")
+    content = prompt_result.messages[0].content
+    prompt_text = content.text if hasattr(content, "text") else str(content)
+    print(f"生成されたプロンプト:\n{prompt_text}")
     # 取得したプロンプトをLLMに送信
     response = gemini_client.models.generate_content(
         model="gemini-2.5-flash-lite",
-        contents=prompt_result.messages[0].content.text,
+        contents=prompt_text,
     )
-    print(f"\nLLMの回答:\n{response.text[:300]}...")  # 先頭300文字
+    response_text = response.text or ""
+    print(f"\nLLMの回答:\n{response_text[:300]}...")  # 先頭300文字
 
 
 async def main():

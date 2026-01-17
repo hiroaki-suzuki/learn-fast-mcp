@@ -64,17 +64,24 @@ async def main():
         # ============================================================
         # Step 4: LLMがfunction callを返した場合、MCPツールを実行
         # ============================================================
-        part = response.candidates[0].content.parts[0]
+        candidates = response.candidates
+        if not candidates or not candidates[0].content or not candidates[0].content.parts:
+            print(f"=== LLMの応答 ===\n{response.text}")
+            return
+
+        part = candidates[0].content.parts[0]
 
         if part.function_call:
             func_call = part.function_call
+            func_name = func_call.name or ""
+            func_args = dict(func_call.args.items()) if func_call.args else {}
             print("=== LLMが選択したツール ===")
-            print(f"  ツール名: {func_call.name}")
-            print(f"  引数: {json.dumps(dict(func_call.args), ensure_ascii=False)}")
+            print(f"  ツール名: {func_name}")
+            print(f"  引数: {json.dumps(func_args, ensure_ascii=False)}")
             print()
 
             # MCPツールを実行
-            result = await mcp_client.call_tool(func_call.name, dict(func_call.args))
+            result = await mcp_client.call_tool(func_name, func_args)
             print("=== MCPツールの実行結果 ===")
             print(f"  {result}")
         else:
