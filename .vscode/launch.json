@@ -12,6 +12,15 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}/app",
             "envFile": "${workspaceFolder}/app/.env"
+        },
+        {
+            "name": "Debug file",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/app",
+            "envFile": "${workspaceFolder}/app/.env"
         }
     ]
 }
