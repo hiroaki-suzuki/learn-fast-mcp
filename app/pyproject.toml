@@ -1,0 +1,11 @@
+[project]
+name = "app"
+version = "0.1.0"
+description = "Learn FastMCP"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "fastmcp>=2.14.3",
+    "ruff>=0.14.13",
+    "ty>=0.0.12",
+]
