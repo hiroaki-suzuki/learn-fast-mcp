@@ -1,21 +1,53 @@
 """
-Resources、Prompts、Toolsを呼び出すクライアント
+MCPの3つのコンポーネント（Resources、Prompts、Tools）を呼び出すクライアント
+
+このモジュールは、learn_server.pyに接続して各コンポーネントの使い方を示す:
+- Resources: read_resource()でデータを読み取り
+- Prompts: get_prompt()でテンプレートを取得
+- Tools: call_tool()でツールを実行
+
+使い方:
+    1. 先にサーバーを起動: uv run python learn_server.py
+    2. クライアントを実行: uv run python learn_client.py
+
+learn_llm_client.pyとの違い:
+    - このクライアント: 開発者が直接APIを呼び出す
+    - LLMクライアント: LLMを介してコンポーネントを活用
 """
 
 import asyncio
+
 from fastmcp import Client
 from mcp.types import TextContent
 
 
 def get_text(content: object) -> str:
-    """メッセージコンテンツからテキストを抽出"""
+    """
+    メッセージコンテンツからテキストを抽出する
+
+    Promptの応答はTextContent型で返されるため、
+    テキストを取り出すヘルパー関数。
+
+    Args:
+        content: メッセージコンテンツ（TextContentまたは他の型）
+
+    Returns:
+        テキスト文字列
+    """
     if isinstance(content, TextContent):
         return content.text
     return str(content)
 
 
 async def main():
-    # サーバーに接続（HTTPエンドポイント）
+    """
+    learn_server.pyの全コンポーネントをデモする
+
+    1. Resources: 静的・動的リソースの読み取り
+    2. Prompts: 各種プロンプトテンプレートの取得
+    3. Tools: ツールの呼び出し
+    """
+    # MCPサーバーに接続（HTTPエンドポイント）
     client = Client("http://localhost:8000/mcp")
 
     async with client:

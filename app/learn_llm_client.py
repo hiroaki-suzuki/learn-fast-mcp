@@ -1,14 +1,20 @@
 """
-learn_server.py 用のLLMクライアント
+learn_server.py用のLLMクライアント
 
-MCPの3つのコンポーネントをLLM経由で活用する例:
-1. Tools: LLMが自動選択して実行
-2. Resources: コンテキスト情報としてLLMに提供
-3. Prompts: 再利用可能なテンプレートを取得
+このモジュールは、MCPの3つのコンポーネントをLLM経由で活用する方法を示す:
+1. Tools: LLMが自然言語から適切なツールを自動選択して実行
+2. Resources: MCPからデータを取得し、LLMのコンテキストとして活用
+3. Prompts: MCPからプロンプトテンプレートを取得し、LLMに送信
+
+各コンポーネントの役割と制御:
+    - Tools: LLMが呼び出しを決定（LLM制御）
+    - Resources: アプリケーションがデータを提供（アプリケーション制御）
+    - Prompts: ユーザーが明示的に選択（ユーザー制御）
 
 実行前に:
-1. GEMINI_API_KEY環境変数を設定
-2. サーバーを起動: uv run python learn_server.py
+    1. GEMINI_API_KEY環境変数を設定（.env.example参照）
+    2. サーバーを起動: uv run python learn_server.py
+    3. クライアントを実行: uv run python learn_llm_client.py
 """
 
 import asyncio
@@ -20,7 +26,15 @@ from google.genai import types
 
 async def demo_tools(mcp_client: Client, gemini_client: genai.Client):
     """
-    Tool: LLMが自然言語から適切なツールを選択して実行
+    Toolsのデモ: LLMが自然言語から適切なツールを選択して実行
+
+    MCPからツール一覧を取得し、Gemini Function Calling形式に変換。
+    ユーザーの自然言語リクエストをLLMに送信し、
+    LLMが選択したツールをMCPサーバーで実行する。
+
+    Args:
+        mcp_client: MCPクライアント（接続済み）
+        gemini_client: Geminiクライアント
     """
     print("\n" + "=" * 60)
     print("1. TOOLS: LLMによる自動ツール選択")
@@ -76,7 +90,15 @@ async def demo_tools(mcp_client: Client, gemini_client: genai.Client):
 
 async def demo_resources(mcp_client: Client, gemini_client: genai.Client):
     """
-    Resource: 読み取り専用データをLLMのコンテキストとして活用
+    Resourcesのデモ: 読み取り専用データをLLMのコンテキストとして活用
+
+    MCPからリソースを読み取り、そのデータをLLMへの質問のコンテキストとして使用。
+    Resourcesはアプリケーションが制御するデータソースで、
+    LLMに追加情報を提供するために使用する。
+
+    Args:
+        mcp_client: MCPクライアント（接続済み）
+        gemini_client: Geminiクライアント
     """
     print("\n" + "=" * 60)
     print("2. RESOURCES: コンテキスト情報の提供")
@@ -116,7 +138,15 @@ async def demo_resources(mcp_client: Client, gemini_client: genai.Client):
 
 async def demo_prompts(mcp_client: Client, gemini_client: genai.Client):
     """
-    Prompt: 再利用可能なテンプレートを取得してLLMに渡す
+    Promptsのデモ: 再利用可能なテンプレートを取得してLLMに渡す
+
+    MCPからプロンプトテンプレートを取得し、引数を渡して展開。
+    生成されたプロンプトをそのままLLMに送信する。
+    Promptsはユーザーが明示的に選択するテンプレート。
+
+    Args:
+        mcp_client: MCPクライアント（接続済み）
+        gemini_client: Geminiクライアント
     """
     print("\n" + "=" * 60)
     print("3. PROMPTS: 再利用可能なテンプレート")
@@ -130,7 +160,9 @@ async def demo_prompts(mcp_client: Client, gemini_client: genai.Client):
 
     # プロンプトを取得（引数を渡す）
     print("\n--- explain_topic プロンプトを使用 ---")
-    prompt_result = await mcp_client.get_prompt("explain_topic", {"topic": "MCP"})
+    prompt_result = await mcp_client.get_prompt(
+        "explain_topic", {"topic": "MCP プロトコル"}
+    )
     content = prompt_result.messages[0].content
     prompt_text = content.text if hasattr(content, "text") else str(content)
     print(f"生成されたプロンプト: {prompt_text}")
@@ -163,8 +195,15 @@ async def demo_prompts(mcp_client: Client, gemini_client: genai.Client):
 
 
 async def main():
+    """
+    MCPの3つのコンポーネントをLLM経由で活用するデモを実行
+
+    Tools、Resources、Promptsの各デモを順番に実行し、
+    それぞれのコンポーネントの使い方を示す。
+    """
+    # クライアントの初期化
     mcp_client = Client("http://localhost:8000/mcp")
-    gemini_client = genai.Client()
+    gemini_client = genai.Client()  # GEMINI_API_KEY環境変数から自動取得
 
     async with mcp_client:
         print("=" * 60)
